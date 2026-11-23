@@ -1002,8 +1002,9 @@ function ExerciseBlock({ entryIdx, compact, listed, dense, editing, onToggle, on
       <Icon name={plan.kind === 'up' ? 'arrowUp' : plan.kind === 'deload' || plan.prog?.deload ? 'arrowDown' : plan.kind === 'programme' ? 'calendar' : 'lightbulb'} />
       <span><strong>{t(guidance.policyLabel)}</strong> · {t(...guidance.why)}{guidance.prog?.rpe != null && <> · {t('aim for {0}', (r => `${r.k} ${fmtNum(r.v)}`)(rpeAs(guidance.prog.rpe, effortOf(S))))}</>}</span>
     </button>}
-    {/* The skill ladder (lib/ladders.js): the next rung, and one tap to put it in the routine. */}
-    {plan?.kind === 'ladder' && plan.next && EXIDX[plan.next] && <LadderNext entry={entry} next={plan.next} />}
+    {/* The skill ladder (lib/ladders.js): the next rung, and one tap to put it in the routine. The
+        Skill ladder rule names it at the top of its range, the others at a bodyweight rep ceiling. */}
+    {plan?.next && EXIDX[plan.next] && <LadderNext entry={entry} next={plan.next} />}
     </>}
     <div className="card" style={{ marginTop: 12, marginBottom: 0 }}>
       {/* the header carries the same eff3/timed sizing as the rows, or the labels drift off their

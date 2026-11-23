@@ -99,6 +99,44 @@ export function saveLadder (s, { id, name, steps }) {
   return next
 }
 
+// Your own chains other than `keep`, with `id` taken out of them: a rung lives in one of your
+// chains at a time, or ladderOf would answer for whichever came first. A chain left with fewer
+// than two rungs goes.
+function withoutRungElsewhere (s, id, keep) {
+  const list = ownLadders(s)
+    .map(l => (l.id === keep ? l : { ...l, steps: l.steps.filter(x => x !== id) }))
+    .filter(l => l.steps.length >= 2)
+    .map(({ own, ...l }) => l)
+  if (list.length) s.ladders = list
+  else delete s.ladders
+}
+
+/** Put `id` one rung easier (rel < 0) or harder (rel > 0) than `anchor`, from the exercise detail
+ *  sheet. In one of your chains it goes in place; in a built-in chain your own copy is saved with
+ *  it (yours are read first, see ladderOf); outside any chain a new one of the two is made. `name`
+ *  is the new chain's name in those last two cases: the caller translates it. Returns the saved
+ *  chain, or null (the same exercise, a full chain, or out of room for chains). */
+export function insertRung (s, anchor, id, rel, name) {
+  if (typeof anchor !== 'string' || typeof id !== 'string' || !anchor || !id || anchor === id) return null
+  const at = ladderOf(s, anchor)
+  const base = at ? at.ladder : { steps: [anchor] }
+  const steps = base.steps.filter(x => x !== id)
+  if (steps.length >= STEPS_MAX) return null
+  steps.splice(steps.indexOf(anchor) + (rel > 0 ? 1 : 0), 0, id)
+  const saved = saveLadder(s, { id: base.own ? base.id : undefined, name: base.own ? base.name : name, steps })
+  if (saved) withoutRungElsewhere(s, id, saved.id)
+  return saved
+}
+
+/** Take `id` out of the one of your chains it is in (a built-in chain stays as it is). A chain left
+ *  with one rung goes. True when something changed. */
+export function removeRung (s, id) {
+  const at = ladderOf(s, id)
+  if (!at || !at.ladder.own) return false
+  withoutRungElsewhere(s, id, null)
+  return true
+}
+
 /** Remove one of your chains. */
 export function deleteLadder (s, id) {
   const list = ownLadders(s).filter(l => l.id !== id).map(({ own, ...l }) => l)
