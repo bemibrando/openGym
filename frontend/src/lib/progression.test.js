@@ -323,13 +323,13 @@ describe('bodyweight exercises', () => {
 
   // On a skill ladder the harder variation has a name, so the ceiling offers it on any rule.
   it('names the next rung of a skill ladder at the ceiling, on any rule', () => {
-    const PUSH = '0662'   // push-up, then diamond push-up (lib/ladders.js)
+    const PUSH = '0662'   // push-up, then decline push-up (lib/ladders.js)
     const pcfg = { ...cfg, id: PUSH, reps: 10, repsMax: 15 }
     const at15 = hist(PUSH, [[0, 15, 15, 15]], { sets: 3, reps: 15 })
     for (const prog of ['linear', 'greyskull', 'double']) {
-      expect(nextPrescription(at15, { ...pcfg, prog })).toMatchObject({ kind: 'up', sets: 4, next: '0283' })
+      expect(nextPrescription(at15, { ...pcfg, prog })).toMatchObject({ kind: 'up', sets: 4, next: '0279' })
     }
-    expect(nextPrescription(at15, { ...pcfg, sets: MAX_BW_SETS })).toMatchObject({ kind: 'hold', next: '0283' })
+    expect(nextPrescription(at15, { ...pcfg, sets: MAX_BW_SETS })).toMatchObject({ kind: 'hold', next: '0279' })
     // Below the ceiling, or with none set, nothing is offered yet.
     expect(nextPrescription(hist(PUSH, [[0, 12, 12, 12]], { sets: 3, reps: 12 }), pcfg).next).toBeUndefined()
     expect(nextPrescription(at15, { ...pcfg, repsMax: undefined }).next).toBeUndefined()

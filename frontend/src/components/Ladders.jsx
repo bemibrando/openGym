@@ -4,9 +4,9 @@ import { useUI } from '../store/useUI.js'
 import { t, exerciseNameFor, exerciseNameClass } from '../lib/i18n.js'
 import { nameIn, said } from '../lib/a11y-name.js'
 import { uid, exerciseNameText } from '../lib/format.js'
-import { exOr } from '../lib/exercises.js'
+import { exOr, isHold } from '../lib/exercises.js'
 import { allLadders, reachedRung, saveLadder, deleteLadder, STEPS_MAX, NAME_MAX } from '../lib/ladders.js'
-import { LADDER_TOP, LADDER_BOTTOM } from '../lib/progression.js'
+import { LADDER_TOP, LADDER_BOTTOM, LADDER_HOLD_TOP, LADDER_HOLD_BOTTOM } from '../lib/progression.js'
 import { exerciseDetailSheet, exercisePicker, confirmSheet } from '../sheets.jsx'
 import { DEFAULT_GLYPH, glyphOf } from '../lib/glyphs.js'
 import Icon from './Icon.jsx'
@@ -23,14 +23,23 @@ const NAME = {
   'pull-up': () => t('Pull-up ladder'),
   dip: () => t('Dip ladder'),
   squat: () => t('Single-leg squat ladder'),
-  hinge: () => t('Hinge ladder'),
-  core: () => t('Core ladder'),
-  handstand: () => t('Handstand ladder'),
+  row: () => t('Row ladder'),
+  'glute-bridge': () => t('Glute bridge ladder'),
+  hamstring: () => t('Hamstring ladder'),
+  'leg-raise': () => t('Leg raise ladder'),
+  handstand: () => t('Handstand push-up ladder'),
+  calf: () => t('Calf raise ladder'),
+  'core-hold': () => t('Core hold ladder'),
+  'handstand-hold': () => t('Handstand hold ladder'),
+  planche: () => t('Planche ladder'),
 }
 export const ladderName = l => (l.own ? l.name : NAME[l.id]?.() || l.id)
 
-/** A rung as it starts in a routine: three sets climbing from 5 to 12 reps on the ladder rule. */
-export const rungEntry = id => ({ id, sets: 3, reps: LADDER_TOP, repsMin: LADDER_BOTTOM, weight: 0, mode: 'reps', bodyweight: true, prog: 'ladder' })
+/** A rung as it starts in a routine, on the ladder rule: three sets climbing from 5 to 12 reps, or
+    a hold (a plank, a planche) climbing in seconds up to a minute (lib/progression.js). */
+export const rungEntry = id => isHold(id)
+  ? { id, sets: 3, sec: LADDER_HOLD_TOP, weight: 0, mode: 'time', bodyweight: true, prog: 'ladder' }
+  : { id, sets: 3, reps: LADDER_TOP, repsMin: LADDER_BOTTOM, weight: 0, mode: 'reps', bodyweight: true, prog: 'ladder' }
 
 function TrainIt ({ ladder, rung, close }) {
   const S = useStore(s => s.S)
@@ -53,7 +62,9 @@ function TrainIt ({ ladder, rung, close }) {
   }
   return <>
     <h3 className={exerciseNameClass(ex)}>{t('Train {0}', exerciseNameFor(ex))}</h3>
-    <div className="muted small" style={{ marginBottom: 12 }}>{t('Three sets, from {0} up to {1} reps. Every set at {1} and the next rung is yours.', LADDER_BOTTOM, LADDER_TOP)}</div>
+    <div className="muted small" style={{ marginBottom: 12 }}>{isHold(id)
+      ? t('Three holds, from {0} up to {1} seconds. Every hold at {1} and the next rung is yours.', LADDER_HOLD_BOTTOM, LADDER_HOLD_TOP)
+      : t('Three sets, from {0} up to {1} reps. Every set at {1} and the next rung is yours.', LADDER_BOTTOM, LADDER_TOP)}</div>
     <div className="list">
       {S.routines.map(r => <button type="button" key={r.id} className="item" onClick={() => put(r.id)}>
         <span className="lrow-i"><Icon name={glyphOf(r.emoji)} /></span>
