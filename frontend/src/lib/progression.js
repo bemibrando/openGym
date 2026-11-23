@@ -663,10 +663,14 @@ export function nextPrescription(S, cfg, routine) {
     if (top > 0 && goal >= top) {
       const sets = reached + 1
       const bottom = Math.max(1, Math.min(cfg.reps || top, top))
-      if (sets <= MAX_BW_SETS) return { policy, kind: 'up', weight: 0, reps: bottom, sets, why: ['{0} reps in every set! Add a set and go back to {1}.', goal, bottom] }
+      // On a skill ladder (lib/ladders.js) the harder variation has a name: the workout offers it
+      // under the progression line, as the Skill ladder rule does. Offered, never swapped in.
+      const rung = nextRung(S, cfg.id)
+      const ladder = rung ? { next: rung } : {}
+      if (sets <= MAX_BW_SETS) return { policy, kind: 'up', weight: 0, reps: bottom, sets, ...ladder, why: ['{0} reps in every set! Add a set and go back to {1}.', goal, bottom] }
       // Out of sets worth adding: more volume is no longer the answer, load or a harder
       // variation is — and that is a decision for a person, not a policy.
-      return { policy, kind: 'hold', weight: 0, reps: goal, ...keep, why: ['{0} sets of {1}. Time to add weight or try a harder variation.', sets - 1, goal] }
+      return { policy, kind: 'hold', weight: 0, reps: goal, ...keep, ...ladder, why: ['{0} sets of {1}. Time to add weight or try a harder variation.', sets - 1, goal] }
     }
     // Unilateral work steps by two, so the total stays even and both sides get the rep.
     const next = goal + repStep(cfg)

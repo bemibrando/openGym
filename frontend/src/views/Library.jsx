@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { EXDB, BODYPARTS, allExercises, equipmentOf, byCategory, searchExercises, similarExercises } from '../lib/exercises.js'
 import { MUSCLE_NAME } from '../lib/muscles.js'
+import { ladderOf } from '../lib/ladders.js'
 import { activeProfile, exAvailable } from '../lib/equipment.js'
 import { NotHereButton } from '../components/MachinePicker.jsx'
 import { bestWeightFor } from '../lib/history.js'
@@ -80,11 +81,13 @@ export default function Library() {
     : []
   const row = e => {
     const best = bestWeightFor(S, e.id)
+    // Its place on a skill ladder (lib/ladders.js), on the line with muscle and equipment.
+    const rung = ladderOf(S, e.id)
     // The row is not a button: its name is, stretched over the row (.tap-main), with Add to my plan
     // a sibling above it (card dismiss pass), so neither tap can land on the other.
     return <div key={e.id} className="item tap-host">
       <Thumb ex={e} />
-      <button type="button" className="grow item-open tap-main" aria-haspopup="dialog" onClick={() => exerciseDetailSheet(e)}><span className={`tt ${exerciseNameClass(e)}`}>{isFav(S, e.id) && <Icon name="starFill" className="fav-star" />}{exerciseNameFor(e)}</span><span className="ss capitalize">{t(MUSCLE_NAME[e.tg] || e.tg || e.bp)} · {t(e.eq)}</span></button>
+      <button type="button" className="grow item-open tap-main" aria-haspopup="dialog" onClick={() => exerciseDetailSheet(e)}><span className={`tt ${exerciseNameClass(e)}`}>{isFav(S, e.id) && <Icon name="starFill" className="fav-star" />}{exerciseNameFor(e)}</span><span className="ss capitalize">{t(MUSCLE_NAME[e.tg] || e.tg || e.bp)} · {t(e.eq)}{rung && ` · ${t('Rung {0} of {1}', rung.index + 1, rung.ladder.steps.length)}`}</span></button>
       {best > 0 && <span className="tag acc">{fmtNum(best)}</span>}
       {/* "Not at my gym" (#923): this machine off the active gym's list, with Undo. */}
       {profile && !showAll && <NotHereButton profile={profile} ex={e} />}

@@ -25,6 +25,8 @@ import { nameIn, said } from './lib/a11y-name.js'
 import { nav, closeThenNav, navToWorkout } from './lib/nav.js'
 import { buildStarterPlan, starterPlanDays, starterPlanOptions, AWAY_PLANS } from './lib/starter.js'
 import OwnExerciseMedia from './components/OwnExerciseMedia.jsx'
+import { ladderOf, prevRung, nextRung, insertRung, removeRung } from './lib/ladders.js'
+import { ladderName, laddersSheet } from './components/Ladders.jsx'
 import Media, { Thumb } from './components/Media.jsx'
 import CustomMediaField from './components/CustomMediaField.jsx'
 import WorkoutMediaSection, { workoutMediaCount } from './components/WorkoutMedia.jsx'
@@ -1606,6 +1608,8 @@ function ExerciseDetail({ ex, close }) {
     {/* Beginner to Elite for the main lifts, from the best estimated 1RM against body weight
         (lib/strength-level.js). Hidden without a weigh-in. */}
     <StrengthLevelBlock exId={ex.id} />
+    {/* Its skill ladder: the rungs either side, and a rung easier or harder to add. */}
+    {!isCardio(ex) && !ex.missing && <LadderSection ex={ex} close={close} />}
     {/* No one-rep max on an assistance machine: the load is the help you were given, so the
         calculator would answer "your 1RM is 23 kg" about a number that gets smaller as you get
         stronger (issue #232). Cardio has none for the same kind of reason. */}
@@ -1638,6 +1642,52 @@ function ExerciseDetail({ ex, close }) {
   </>
 }
 export const exerciseDetailSheet = ex => ui().openSheet(close => <ExerciseDetail ex={ex} close={close} />)
+
+// The exercise's skill ladder (lib/ladders.js) on its detail sheet: the rung below and above, each
+// a tap away, and a way to put another exercise one rung easier or harder. That edits your own
+// chain, or saves your copy of a built-in one (insertRung); Exercises → Ladders shows them all.
+function LadderSection({ ex, close }) {
+  const st = useStore(s => s.S)
+  const at = ladderOf(st, ex.id)
+  const prev = prevRung(st, ex.id)
+  const next = nextRung(st, ex.id)
+  const open = id => { const e = EXIDX[id]; if (!e) return; close(); exerciseDetailSheet(e) }
+  const rungRow = (id, label) => {
+    const e = EXIDX[id]
+    if (!e) return null
+    return <div key={id} className="item" {...tappable(() => open(id))}>
+      <Thumb ex={e} />
+      <div className="grow"><div className="ss">{label}</div><div className={`tt ${exerciseNameClass(e)}`}>{exerciseNameFor(e)}</div></div>
+      <Icon name="chevronRight" className="chev" />
+    </div>
+  }
+  const add = rel => {
+    const picker = exercisePicker(picked => {
+      picker.close()
+      let saved = null
+      update(s => { saved = insertRung(s, ex.id, picked.id, rel, at ? ladderName(at.ladder) : exerciseNameText(ex)) })
+      toast(saved ? t('{0} is on {1} now.', exerciseNameText(picked), saved.name) : t('That ladder is full.'))
+    }, { title: t('Add a rung'), like: ex.id })
+  }
+  const remove = () => { update(s => { removeRung(s, ex.id) }); toast(t('Removed from this ladder')) }
+  return <>
+    <h4 className="sec">{at ? ladderName(at.ladder) : t('Skill ladders')}</h4>
+    <div className="small dim" style={{ marginBottom: 4 }}>
+      {at ? t('Rung {0} of {1}', at.index + 1, at.ladder.steps.length) : t('Not on a ladder yet. Add an easier or a harder exercise to start one.')}
+    </div>
+    {prev && rungRow(prev, t('Easier'))}
+    {next && rungRow(next, t('Next rung'))}
+    <div className="small dim" style={{ margin: '12px 0 4px' }}>{t('Add a rung')}</div>
+    <div className="row" style={{ gap: 6 }}>
+      <Button size="sm" variant="tinted" style={{ flex: 1 }} onClick={() => add(-1)}>{t('Easier')}</Button>
+      <Button size="sm" variant="tinted" style={{ flex: 1 }} onClick={() => add(1)}>{t('Harder')}</Button>
+    </div>
+    <div className="row" style={{ gap: 6, marginTop: 4 }}>
+      <Button size="sm" variant="ghost" icon="stairs" style={{ flex: 1 }} onClick={() => { close(); laddersSheet() }}>{t('Ladders')}</Button>
+      {at?.ladder.own && <Button size="sm" variant="ghost" style={{ flex: 1 }} onClick={remove}>{t('Remove from this ladder')}</Button>}
+    </div>
+  </>
+}
 
 /* ============================ exercise history ============================ */
 // What you did on this exercise before, reachable mid-workout (issue #43): the curve first,
