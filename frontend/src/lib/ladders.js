@@ -17,21 +17,41 @@ export const STEPS_MAX = 12
 export const OWN_MAX = 24
 export const NAME_MAX = 40
 
+// One movement per chain, and a chain is all reps or all holds (catalogue "hold": true): a hold's
+// rungs climb in seconds, a rep chain's in reps (the Skill ladder rule, lib/progression.js), and
+// the next rung of one is never the other. An exercise is a rung of one built-in chain at most,
+// or ladderOf would answer for whichever came first. ladders.test.js checks all three.
+// docs/dev/LADDER_AUDIT.md has the reasons for each chain.
 export const LADDERS = [
-  // Wall, incline, knees, the floor, then narrow, archer and one arm.
-  { id: 'push-up', steps: ['0659', '0493', '3211', '0662', '0283', '3294', '0725'] },
-  // Rows under a bar, help from a band, the slow way down, chin-up, pull-up, archer, one arm.
-  { id: 'pull-up', steps: ['0499', '0970', '4725', '1326', '0652', '3293', '0638'] },
-  // Bench dips with bent knees, dips on bars, on rings, then the Korean dip.
-  { id: 'dip', steps: ['0129', '0814', '0251', '0677', '3288'] },
-  // Squat, split squat, a pistol with support, to a box, the full pistol, the shrimp.
-  { id: 'squat', steps: ['1197', '0781', '1762', '2984', '1759', '3366'] },
-  // Glute bridge to one leg, hip thrust to one leg, then the Nordic curl.
-  { id: 'hinge', steps: ['2471', '2475', '2072', '2071', '7746'] },
-  // Plank, hollow hold, hanging knee raise, hanging leg raise, L-sit, dragon flag.
-  { id: 'core', steps: ['0463', '1246', '9819', '0472', '3419', '4058'] },
-  // Pike push-up, feet up on a bench, wall walks, a handstand, handstand push-up.
-  { id: 'handstand', steps: ['2921', '2831', '5234', '3302', '0471'] },
+  // Wall, incline, knees, the floor, feet up, narrow, archer, one arm on the knees, one arm.
+  { id: 'push-up', steps: ['0659', '0493', '3211', '0662', '0279', '0283', '3294', '3002', '0725'] },
+  // Shoulder blades on the bar, help from a band, the slow way down, chin-up, pull-up, archer,
+  // one arm on the way down, one arm.
+  { id: 'pull-up', steps: ['0688', '0970', '4725', '1326', '0652', '3293', '10902', '0638'] },
+  // Rows under a bar with bent knees, straight, feet up, then the front lever on the way down and
+  // up.
+  { id: 'row', steps: ['2300', '0499', '3536', '11090', '3295'] },
+  // Bench dips with bent knees, with the feet up, dips on bars, on rings, then the Korean dip.
+  { id: 'dip', steps: ['0129', '1753', '0814', '0677', '3288'] },
+  // Squat, split squat, rear foot up, a pistol with support, to a box, the full pistol, the shrimp.
+  { id: 'squat', steps: ['1197', '0781', '3743', '1762', '2984', '1759', '3366'] },
+  // Glute bridge, marching, on one leg, hip thrust, hip thrust on one leg.
+  { id: 'glute-bridge', steps: ['2471', '3561', '2475', '2072', '2071'] },
+  // Hamstring bridge, on one leg, a sliding leg curl, the Nordic curl with a band, then without.
+  { id: 'hamstring', steps: ['8358', '9359', '3395', '4204', '7746'] },
+  // Lying leg raise, hanging knee raise, hanging leg raise, toes to bar, dragon flag.
+  { id: 'leg-raise', steps: ['1163', '9819', '0472', '3891', '4058'] },
+  // Pike push-up, feet up on a bench, from a deficit on rings, wall walks, handstand push-up.
+  { id: 'handstand', steps: ['2921', '2831', '9316', '5234', '0471'] },
+  // Calf raise, off a stair for range, on one leg.
+  { id: 'calf', steps: ['3018', '1490', '1387'] },
+  // Holds, in seconds.
+  // Plank on the knees, plank, hollow hold, L-sit on the floor, L-sit hanging.
+  { id: 'core-hold', steps: ['3238', '0463', '1246', '3419', '11877'] },
+  // Against the wall, against the wall on one leg, free.
+  { id: 'handstand-hold', steps: ['6545', '10998', '3302'] },
+  // Lean, frog, tuck, straddle, full.
+  { id: 'planche', steps: ['3300', '3301', '10989', '3298', '3299'] },
 ].map(l => ({ ...l, steps: l.steps.filter(id => EXIDX[id]) }))
 
 const clean = v => String(v ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, NAME_MAX)

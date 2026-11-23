@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { LADDERS, allLadders, ladderOf, nextRung, prevRung, reachedRung, saveLadder, deleteLadder, ownLadders } from './ladders.js'
-import { nextPrescription, POLICIES_FOR, LADDER_TOP } from './progression.js'
-import { EXIDX } from './exercises.js'
+import { nextPrescription, POLICIES_FOR, LADDER_TOP, LADDER_HOLD_TOP, LADDER_HOLD_BOTTOM, LADDER_HOLD_STEP } from './progression.js'
+import { EXIDX, isHold } from './exercises.js'
 
 const done = (d, id, reps, sets = 3) => ({ d, entries: [{ id, target: { id, sets, reps, prog: 'ladder', weight: 0 }, sets: Array.from({ length: sets }, () => ({ w: 0, r: reps, done: true })) }] })
 
 describe('ladders', () => {
   it('every built-in rung is a catalogue exercise, easiest first', () => {
     for (const l of LADDERS) {
-      expect(l.steps.length).toBeGreaterThanOrEqual(4)
+      expect(l.steps.length).toBeGreaterThanOrEqual(3)
       for (const id of l.steps) expect(EXIDX[id], id).toBeTruthy()
     }
-    expect(nextRung({}, '0662')).toBe('0283')   // push-up → diamond push-up
+    expect(nextRung({}, '0662')).toBe('0279')   // push-up → decline push-up
     expect(prevRung({}, '0662')).toBe('3211')
     expect(nextRung({}, '0725')).toBe(null)      // one-arm push-up: the top
     expect(nextRung({}, '0025')).toBe(null)      // a barbell lift is in no ladder
@@ -41,7 +41,7 @@ describe('ladders', () => {
 
 describe('the Skill ladder rule', () => {
   const cfg = { id: '0662', sets: 3, reps: 12, repsMin: 5, weight: 0, bodyweight: true, prog: 'ladder', mode: 'reps' }
-  it('is a reps rule', () => { expect(POLICIES_FOR.reps).toContain('ladder'); expect(POLICIES_FOR.time).not.toContain('ladder') })
+  it('is a rule for reps and for holds', () => { expect(POLICIES_FOR.reps).toContain('ladder'); expect(POLICIES_FOR.time).toContain('ladder'); expect(POLICIES_FOR.cardio).not.toContain('ladder') })
 
   it('starts at the bottom, climbs a rep per clean session, repeats a miss', () => {
     expect(nextPrescription({ workouts: [] }, cfg)).toMatchObject({ kind: 'first', reps: 5 })
@@ -53,9 +53,58 @@ describe('the Skill ladder rule', () => {
 
   it('at the top names the next rung, and at the last rung holds', () => {
     const p = nextPrescription({ workouts: [done('2026-11-01', '0662', LADDER_TOP)] }, cfg)
-    expect(p).toMatchObject({ kind: 'ladder', next: '0283', reps: 12 })
+    expect(p).toMatchObject({ kind: 'ladder', next: '0279', reps: 12 })
     const last = nextPrescription({ workouts: [done('2026-11-01', '0725', 12)] }, { ...cfg, id: '0725' })
     expect(last.kind).toBe('hold')
     expect(last.next).toBeUndefined()
+  })
+})
+describe('the built-in chains', () => {
+  it('a chain is all reps or all holds', () => {
+    for (const l of LADDERS) {
+      const holds = l.steps.filter(id => isHold(id))
+      expect(holds.length === 0 || holds.length === l.steps.length, l.id + ': ' + holds.join(', ')).toBe(true)
+    }
+  })
+
+  it('an exercise is a rung of one built-in chain at most', () => {
+    const seen = new Map()
+    for (const l of LADDERS) for (const id of l.steps) {
+      expect(seen.get(id), id + ' is in ' + seen.get(id) + ' and ' + l.id).toBeUndefined()
+      seen.set(id, l.id)
+    }
+  })
+
+  it('every chain has its own name, and none is cut short by a missing exercise', async () => {
+    const src = (await import('node:fs')).readFileSync(new URL('./ladders.js', import.meta.url), 'utf8')
+    const written = [...src.matchAll(/\{ id: '([^']+)', steps: \[([^\]]+)\]/g)].map(m => [m[1], m[2].match(/'(\d+)'/g).length])
+    expect(written.map(([id]) => id)).toEqual(LADDERS.map(l => l.id))
+    for (const [id, n] of written) expect(LADDERS.find(l => l.id === id).steps, id).toHaveLength(n)
+  })
+})
+
+describe('the Skill ladder rule for holds', () => {
+  const held = (d, id, sec, sets = 3) => ({ d, entries: [{ id, target: { id, sets, sec, mode: 'time', prog: 'ladder', weight: 0 }, sets: Array.from({ length: sets }, () => ({ w: 0, sec, done: true })) }] })
+  const cfg = { id: '0463', sets: 3, sec: LADDER_HOLD_TOP, weight: 0, bodyweight: true, prog: 'ladder', mode: 'time' }
+
+  it('starts at the bottom, climbs a few seconds per clean session, repeats a miss', () => {
+    expect(nextPrescription({ workouts: [] }, cfg)).toMatchObject({ kind: 'first', sec: LADDER_HOLD_BOTTOM })
+    expect(nextPrescription({ workouts: [held('2026-11-01', '0463', 30)] }, cfg)).toMatchObject({ kind: 'up', sec: 30 + LADDER_HOLD_STEP })
+    const miss = held('2026-11-01', '0463', 30)
+    miss.entries[0].sets[1].sec = 22
+    expect(nextPrescription({ workouts: [miss] }, cfg)).toMatchObject({ kind: 'hold', sec: 30 })
+  })
+
+  it('at the top names the next hold, and at the last one holds', () => {
+    expect(nextPrescription({ workouts: [held('2026-11-01', '0463', LADDER_HOLD_TOP)] }, cfg)).toMatchObject({ kind: 'ladder', next: '1246', sec: LADDER_HOLD_TOP })
+    const last = nextPrescription({ workouts: [held('2026-11-01', '3299', LADDER_HOLD_TOP)] }, { ...cfg, id: '3299' })
+    expect(last.kind).toBe('hold')
+    expect(last.next).toBeUndefined()
+  })
+
+  it('takes a longer plan as the top', () => {
+    const long = { ...cfg, sec: 90 }
+    expect(nextPrescription({ workouts: [held('2026-11-01', '0463', 60)] }, long)).toMatchObject({ kind: 'up', sec: 65 })
+    expect(nextPrescription({ workouts: [held('2026-11-01', '0463', 90)] }, long)).toMatchObject({ kind: 'ladder', next: '1246' })
   })
 })

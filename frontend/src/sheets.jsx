@@ -2450,7 +2450,9 @@ function ProgressionFields({ ex, mode, c, setC, routine, unit, perSide, bw, fall
               ...options.map(p => ({ value: p, label: t(POLICY_NAME[p]) }))]} />
         </div>
         <div className="small dim" style={{ marginBottom: active === 'off' ? 18 : 10 }}>
-          {freestyle && !c.prog ? t('Freestyle keeps the numbers you set. A rule picked here applies to this workout only.') : t(POLICY_DESC[active])}
+          {freestyle && !c.prog ? t('Freestyle keeps the numbers you set. A rule picked here applies to this workout only.')
+            : active === 'ladder' && mode === 'time' ? t('For bodyweight holds. Five seconds more each clean session up to the top, then the next, harder hold of the ladder, back at the bottom.')
+            : t(POLICY_DESC[active])}
         </div>
       </>}
     {/* Double progression on a weighted exercise fills this row with four steppers; `cfgrow-4`
