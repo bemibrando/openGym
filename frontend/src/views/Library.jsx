@@ -87,7 +87,7 @@ export default function Library() {
     // a sibling above it (card dismiss pass), so neither tap can land on the other.
     return <div key={e.id} className="item tap-host">
       <Thumb ex={e} />
-      <button type="button" className="grow item-open tap-main" aria-haspopup="dialog" onClick={() => exerciseDetailSheet(e)}><span className={`tt ${exerciseNameClass(e)}`}>{isFav(S, e.id) && <Icon name="starFill" className="fav-star" />}{exerciseNameFor(e)}</span><span className="ss capitalize">{t(MUSCLE_NAME[e.tg] || e.tg || e.bp)} · {t(e.eq)}{rung && ` · ${t('Rung {0} of {1}', rung.index + 1, rung.ladder.steps.length)}`}</span></button>
+      <button type="button" className="grow item-open tap-main" aria-haspopup="dialog" onClick={() => exerciseDetailSheet(e)}><span className={`tt ${exerciseNameClass(e)}`}>{isFav(S, e.id) && <Icon name="starFill" className="fav-star" />}{exerciseNameFor(e)}</span><span className="ss capitalize">{t(MUSCLE_NAME[e.tg] || e.tg || e.bp)} · {t(e.eq)}{rung && <> · <span style={{ textTransform: 'none' }}>{t('Rung {0} of {1}', rung.index + 1, rung.ladder.steps.length)}</span></>}</span></button>
       {best > 0 && <span className="tag acc">{fmtNum(best)}</span>}
       {/* "Not at my gym" (#923): this machine off the active gym's list, with Undo. */}
       {profile && !showAll && <NotHereButton profile={profile} ex={e} />}

@@ -1667,7 +1667,7 @@ function LadderSection({ ex, close }) {
       let saved = null
       update(s => { saved = insertRung(s, ex.id, picked.id, rel, at ? ladderName(at.ladder) : exerciseNameText(ex)) })
       toast(saved ? t('{0} is on {1} now.', exerciseNameText(picked), saved.name) : t('That ladder is full.'))
-    }, { title: t('Add a rung'), like: ex.id })
+    }, { title: t('Add a rung'), like: ex.id, actionIcon: 'plus' })
   }
   const remove = () => { update(s => { removeRung(s, ex.id) }); toast(t('Removed from this ladder')) }
   return <>
